@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Info & Concern Log</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topBar">
+      <div>
+        <h1>User Info & Issue / Concern Log</h1>
+        <div class="topActions" style="margin-left:auto;">
+          <button id="btnAddEntry">+ Add Entry</button>
+          <button id="btnUndoRemove" class="secondary" style="display:none;">Undo Remove</button>
+          <button id="btnCollapseAll" class="secondary">Collapse All</button>
+          <button id="btnExpandAll" class="secondary">Expand All</button>
+          <button id="btnManageConcernTypes" class="secondary">+ Manage Concern Types</button>
+        </div>
+
+    <label class="darkModeToggle fixed">
+      <input type="checkbox" id="darkModeToggle" />
+      <span class="slider">
+        <span class="icon sun" title="Light mode">☀️</span>
+        <span class="icon moon" title="Dark mode">🌙</span>
+      </span>
+    </label>
+      </div>
+    </header>
+
+    <main class="page">
+      <div id="entries" class="entries"></div>
+    </main>
+
+    <!-- Manage Concern Types modal -->
+    <div id="concernTypeModal" class="modalOverlay" style="display:none;">
+      <div class="modalBox">
+        <div class="modalHeader">
+          <h2>Manage Concern Types</h2>
+          <button class="secondary" id="btnCloseConcernTypeModal" type="button">Close</button>
+        </div>
+
+        <div class="modalBody">
+          <section class="card">
+            <h3 id="concernFormTitle">Add New Concern Type</h3>
+            <input type="hidden" id="ctEditingValue" value="" />
+
+            <label>Name (shown in the dropdown)</label>
+            <input type="text" id="ctLabel" placeholder="e.g. VPN Certificate Error" />
+
+            <label>Short Description</label>
+            <textarea id="ctUserCalling" style="min-height:80px;" placeholder="Short description of why the user is calling..."></textarea>
+
+            <label>Root Cause</label>
+            <textarea id="ctRootCause" style="min-height:80px;" placeholder="Root cause: ..."></textarea>
+
+            <label>Troubleshooting Steps</label>
+            <textarea id="ctTroubleshooting" style="min-height:160px;" placeholder="Troubleshooting Steps:&#10;&#10;>step one&#10;>step two"></textarea>
+
+            <label>KB</label>
+            <input type="text" id="ctKb" placeholder="KB0000000 : Article title" />
+
+            <div class="btnRow">
+              <button type="button" id="btnSaveConcernType">Save Concern Type</button>
+              <button type="button" class="secondary" id="btnCancelEditConcernType" style="display:none;">Cancel Edit</button>
+            </div>
+          </section>
+
+          <section class="card">
+            <h3>Your Custom Concern Types</h3>
+            <p class="muted">These are saved in this browser automatically. Use Export to save a backup file you can keep or move to another computer/browser.</p>
+            <div class="btnRow">
+              <button type="button" class="secondary" id="btnExportConcernTypes">Export to File</button>
+              <button type="button" class="secondary" id="btnImportConcernTypes">Import from File</button>
+              <input type="file" id="ctImportFileInput" accept="application/json" style="display:none;" />
+            </div>
+            <div id="customConcernList" class="customConcernList">
+              <p class="muted" id="customConcernEmpty">No custom concern types yet. Add one above — it will be saved in this browser and show up in every entry's dropdown from now on.</p>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <template id="entryTemplate">
+      <article class="entry">
+
+        <div class="entryHeader">
+          <span class="badge">
+            Entry <span class="entryNumber"></span>
+            <input class="headerText1" type="text" placeholder="Phone #" style="margin-left:10px;width:120px;" />
+            <input class="headerText2" type="text" placeholder="Alias" style="margin-left:5px;width:120px;" />
+            <input class="headerText3" type="text" placeholder="INC/Name" style="margin-left:5px;width:120px;" />
+          </span>
+          </span>
+          <div>
+            <button class="secondary" data-action="toggle">Collapse</button>
+            <button class="danger" data-action="remove">Remove</button>
+          </div>
+        </div>
+
+        <div class="entryBody">
+          <!-- LEFT -->
+          <section class="card">
+            <h2>User Information</h2>
+
+            <label>Root Cause</label>
+            <input class="rootCauseInfo" />
+            <label>Time Zone</label>
+            <input class="timezone" />
+            <label>Business Hours</label>
+            <input class="businessHours" />
+            <label>Best Contact Number</label>
+            <input class="bestContactNumber" />
+            <label>Alternate Contact Number</label>
+            <input class="alternateContactNumber" />
+
+            <div class="btnRow">
+              <button data-action="display">Display User Info</button>
+              <button class="secondary" data-action="copy">Copy</button>
+            </div>
+            <pre class="output userOutput"></pre>
+          </section>
+
+          <section class="card">
+            <h2>Issue / Concern</h2>
+
+            <button class="secondary" data-action="toggle-free-text" id="toggleFreeText">Show Free Text</button>
+
+            <div class="freeTextDetails" style="display:none;">
+              <div class="btnRow">
+                <label>Select:</label>
+                <select class="tabSelect" style="width:auto;margin-left:10px;">
+                  <option value="troubleshooting">Troubleshooting Steps</option>
+                  <option value="escalation">Escalation</option>
+                  <option value="taskRequest">Task Request</option>
+                  <option value="bitlocker">Bitlocker</option>
+                  <option value="hardwareEscalation">Hardware Escalation</option>
+                  <option value="teamsEscalation">Teams Escalation</option>
+                  <option value="outlookEscalation">Outlook and Mailbox Escalation</option>
+                  <option value="swatApproval">SWAT Approval</option>
+                </select>
+              </div>
+
+              <div class="troubleshootingContent">
+                <div class="btnRow">
+                  <button class="secondary" data-action="copy-troubleshooting">Copy</button>
+                </div>
+                <textarea class="issueText" style="width:100%;min-height:300px;resize:vertical;" placeholder="Troubleshooting Steps:">
+Troubleshooting Steps:
+
+
+
+Remote Session Permission: Yes
+Sensitive/Confidential Statement Provided: Yes
+Remote Session Completed: Yes
+Issue Resolved: Yes
+User Confirmed Resolution: Yes
+Permission to Close Ticket: Yes</textarea>
+            </div>
+
+            <div class="escalationContent" style="display:none;">
+              <div class="btnRow">
+                <button class="secondary" data-action="copy-escalation">Copy</button>
+              </div>
+              <textarea class="escalationText" style="width:100%;min-height:300px;resize:vertical;" placeholder="Issue (I) - &#10;Error Message (E) - &#10;Cause (C) - &#10;Troubleshooting Steps:&#10;&#10;&#10;Bug Number (BN) - &#10;System Info (SI) -"></textarea>
+            </div>
+
+            <div class="taskRequestContent" style="display:none;">
+              <div class="btnRow">
+                <button class="secondary" data-action="copy-taskRequest">Copy</button>
+              </div>
+              <textarea class="taskRequestText" style="width:100%;min-height:300px;resize:vertical;" placeholder="Ticket number:  &#10;Device Model:  &#10;Asset number:  &#10;Serial Number:  &#10;Phone number:  &#10;User location:  &#10;Org location:  &#10;Time Zone:  &#10;availability going onsite:  "></textarea>
+            </div>
+
+            <div class="bitlockerContent" style="display:none;">
+              <div class="btnRow">
+                <button class="secondary" data-action="copy-bitlocker">Copy</button>
+              </div>
+              <textarea class="bitlockerText" style="width:100%;min-height:300px;resize:vertical;" placeholder="Caller&#39;s Alias :  &#10;Complete Recovery Key ID:  &#10;User&#39;s Domain -  &#10;Computer&#39;s Domain:   &#10;Full Computer Name:  &#10;Authenticated - YES  &#10;Why Did Self Service Fail? Aka.ms/CPWEB:  &#10;Ticket# "></textarea>
+            </div>
+
+            <div class="hardwareEscalationContent" style="display:none;">
+              <div class="btnRow">
+                <button class="secondary" data-action="copy-hardwareEscalation">Copy</button>
+              </div>
+              <textarea class="hardwareEscalationText" style="width:100%;min-height:300px;resize:vertical;" placeholder="Issue (I) -  &#10;Error Message (E) -NA  &#10;Cause (C)- NA  &#10;Troubleshooting (TS)-  &#10; &#10;Bug Number (BN)- NA  &#10;System Info (SI)- Attached  &#10; &#10;1. What happened when the issue first occurred? Did the computer freeze, shut down, or display an error message? : n/a  &#10;2. Are there any physical damages to the computer, spills, overheating, or any other issues? : na  &#10;3. Are there any unusual sounds or smells coming from the computer? : n/a  &#10;4. Does the issue happen consistently, or is it intermittent? : n/a  &#10;5. Have you tried restarting the computer? Did the issue go away temporarily or persist? : n/a  &#10; &#10;Steps followed with the user during troubleshooting:  &#10; &#10;Disconnect all peripherals from the computer (keyboard, mouse, external monitor, USB devices, printer, docking station, power supply, etc.)  &#10;Connect the power supply, and confirm that is correctly plugged in and it is connected on a working power outlet  &#10;Restart the computer only with the power supply connected  &#10;Computer is powered on does not boot into Windows  &#10;Computer does not turn on at all  &#10;Document ticket with these troubleshooting steps (check and use the button below to generate steps followed)  &#10;Get SME's approval for escalation to CIM Hardware on the ticket  &#10;Escalate ticket to CIM Hardware  &#10; &#10;Model:  &#10;Asset number :  &#10;Serial Number :  &#10;Phone number:   &#10;User location :  &#10;Organization location:   "></textarea>
+            </div>
+
+            <div class="teamsEscalationContent" style="display:none;">
+              <div class="btnRow">
+                <button class="secondary" data-action="copy-teamsEscalation">Copy</button>
+              </div>
+              <textarea class="teamsEscalationText" style="width:100%;min-height:300px;resize:vertical;" placeholder="Issue reported  &#10; &#10;Error message and Valid Screenshots  &#10; &#10;Platform where the issue is reported  &#10; &#10;Nature of issue [ Connectivity , calls , Audio or any other issue ]  &#10;"></textarea>
+            </div>
+
+            <div class="outlookEscalationContent" style="display:none;">
+              <div class="btnRow">
+                <button class="secondary" data-action="copy-outlookEscalation">Copy</button>
+              </div>
+              <textarea class="outlookEscalationText" style="width:100%;min-height:300px;resize:vertical;" placeholder="Email Address of the affected Mailbox  &#10; &#10;Issue reported [ Outlook Classic app or Outlook new app ]  &#10; &#10;Platform where the issue is reported [ Windows / MAC / iOS / Android ]  &#10; &#10;Error message and valid Screenshots  &#10;"></textarea>
+            </div>
+
+            <div class="swatApprovalContent" style="display:none;">
+              <div class="btnRow">
+                <button class="secondary" data-action="copy-swatApproval">Copy</button>
+              </div>
+              <textarea class="swatApprovalText" style="width:100%;min-height:300px;resize:vertical;" placeholder="Issue Summary:  &#10; &#10;Location:   &#10; &#10;User Details:  &#10; &#10;Troubleshooting Done:  &#10; &#10;Device Details:  &#10;"></textarea>
+            </div>
+            </div>
+
+            <div class="concernDetails">
+              <label>Concern Type</label>
+              <select class="concernType">
+                <option value="">-- Select --</option>
+                <optgroup label="Built-in" class="builtinConcernGroup">
+                <option value="ios_passkey">iOS Passkey</option>
+                <option value="android_passkey">Android Passkey </option>
+                <option value="windows_passkey">Windows Passkey </option>
+                <option value="iOS_new"> iOS new </option>
+                <option value="android_new"> Android new </option>
+                <option value="windows_deviceCompliance_update"> Windows device compliance(updates)</option>
+                <option value="bitlock"> Bitlock</option>
+                <option value="windows_deviceCompliance_sync"> Windows device compliance(sync)</option>
+                <option value="identity_pass"> Identity pass</option>
+                <option value="RAS_access"> RAS access</option>
+                <option value="SAW"> SAW</option>
+                <option value="windows_Activation"> Windows Activation</option>
+                <option value="AzureVPN_taskbar"> Azure VPN taskbar</option>
+                <option value="Deleted_device"> Windows Deleted Device</option>
+                <option value="MVD">MVD</option>
+                </optgroup>
+                <optgroup label="Custom" class="customConcernGroup"></optgroup>
+              </select>
+
+              <div class="btnRow">
+                <button data-action="steps">Show Steps</button>
+              </div>
+
+              <div class="splitOutputs">
+              <div class="splitBlock">
+                <div class="btnRow">
+                  <label class="miniLabel">Short Description</label>
+                  <button class="secondary" data-action="copy-usercalling">Copy</button>
+                </div>
+                <textarea class="outputBox userCallingOutput" readonly></textarea>
+              </div>
+
+              <div class="splitBlock">
+                <div class="btnRow">
+                  <label class="miniLabel">Root cause</label>
+                  <button class="secondary" data-action="copy-rootcause">Copy</button>
+                </div>
+                <textarea class="outputBox rootCauseOutput" readonly></textarea>
+              </div>
+
+              <div class="splitBlock">
+                <div class="btnRow">
+                  <label class="miniLabel">Troubleshooting steps</label>
+                  <button class="secondary" data-action="copy-troubleshooting">Copy</button>
+                </div>
+                <textarea class="outputBox troubleshootingOutput" readonly></textarea>
+              </div>
+
+              <div class="splitBlock">
+                <div class="btnRow">
+                  <label class="miniLabel">KB</label>
+                  <button class="secondary" data-action="copy-kb">Copy</button>
+                </div>
+                <textarea class="outputBox kbOutput" readonly></textarea>
+              </div>
+            </div>
+            </div>
+
+            
+            <pre class="output concernOutput" style="display:none;"></pre>
+          </section>
+        </div>
+      </article>
+    </template>
+
+    <script src="script.js"></script>
+  </body>
+</html>
+
