@@ -44,6 +44,7 @@
           <section class="card">
             <h3 id="concernFormTitle">Add New Concern Type</h3>
             <input type="hidden" id="ctEditingValue" value="" />
+            <input type="hidden" id="ctEditingType" value="custom" />
 
             <label>Name (shown in the dropdown)</label>
             <input type="text" id="ctLabel" placeholder="e.g. VPN Certificate Error" />
@@ -64,6 +65,12 @@
               <button type="button" id="btnSaveConcernType">Save Concern Type</button>
               <button type="button" class="secondary" id="btnCancelEditConcernType" style="display:none;">Cancel Edit</button>
             </div>
+          </section>
+
+          <section class="card">
+            <h3>Built-in Concern Types</h3>
+            <p class="muted">Edit the text these generate, or reset any of them back to the original wording.</p>
+            <div id="builtinConcernList" class="customConcernList"></div>
           </section>
 
           <section class="card">

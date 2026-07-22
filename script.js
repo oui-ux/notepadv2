@@ -134,6 +134,7 @@ function renderCustomConcernList() {
 }
 
 function openConcernTypeModal() {
+  renderBuiltinConcernList();
   renderCustomConcernList();
   document.getElementById('concernTypeModal').style.display = 'flex';
 }
@@ -145,6 +146,7 @@ function closeConcernTypeModal() {
 
 function resetConcernTypeForm() {
   document.getElementById('ctEditingValue').value = '';
+  document.getElementById('ctEditingType').value = 'custom';
   document.getElementById('ctLabel').value = '';
   document.getElementById('ctUserCalling').value = '';
   document.getElementById('ctRootCause').value = '';
@@ -160,6 +162,7 @@ function loadConcernTypeIntoForm(value) {
   const found = list.find((c) => c.value === value);
   if (!found) return;
   document.getElementById('ctEditingValue').value = found.value;
+  document.getElementById('ctEditingType').value = 'custom';
   document.getElementById('ctLabel').value = found.label;
   document.getElementById('ctUserCalling').value = found.userCalling;
   document.getElementById('ctRootCause').value = found.rootCause;
@@ -176,16 +179,31 @@ function saveConcernTypeFromForm() {
     alert('Please enter a name for this concern type.');
     return;
   }
+  const editingType = document.getElementById('ctEditingType').value || 'custom';
   const editingValue = document.getElementById('ctEditingValue').value;
-  const list = loadCustomConcernTypes();
 
-  const entryData = {
-    value: editingValue || makeUniqueConcernValue(label, list),
+  const fieldData = {
     label,
     userCalling: document.getElementById('ctUserCalling').value,
     rootCause: document.getElementById('ctRootCause').value,
     troubleshooting: document.getElementById('ctTroubleshooting').value,
     kb: document.getElementById('ctKb').value
+  };
+
+  if (editingType === 'builtin') {
+    const overrides = getBuiltinConcernOverrides();
+    overrides[editingValue] = fieldData;
+    if (!saveBuiltinConcernOverrides(overrides)) return;
+    syncBuiltinConcernLabels();
+    renderBuiltinConcernList();
+    resetConcernTypeForm();
+    return;
+  }
+
+  const list = loadCustomConcernTypes();
+  const entryData = {
+    value: editingValue || makeUniqueConcernValue(label, list),
+    ...fieldData
   };
 
   const idx = list.findIndex((c) => c.value === entryData.value);
@@ -278,6 +296,127 @@ function importConcernTypesFromFile(file) {
   };
   reader.onerror = () => alert('Could not read that file.');
   reader.readAsText(file);
+}
+
+/* ============================================================
+   Built-in Concern Types (editable, overrides saved permanently)
+   ============================================================ */
+const BUILTIN_CONCERN_DEFS = [
+  { value: 'ios_passkey', label: 'iOS Passkey' },
+  { value: 'android_passkey', label: 'Android Passkey' },
+  { value: 'windows_passkey', label: 'Windows Passkey' },
+  { value: 'iOS_new', label: 'iOS new' },
+  { value: 'android_new', label: 'Android new' },
+  { value: 'windows_deviceCompliance_update', label: 'Windows device compliance(updates)' },
+  { value: 'bitlock', label: 'Bitlock' },
+  { value: 'windows_deviceCompliance_sync', label: 'Windows device compliance(sync)' },
+  { value: 'identity_pass', label: 'Identity pass' },
+  { value: 'RAS_access', label: 'RAS access' },
+  { value: 'SAW', label: 'SAW' },
+  { value: 'windows_Activation', label: 'Windows Activation' },
+  { value: 'AzureVPN_taskbar', label: 'Azure VPN taskbar' },
+  { value: 'Deleted_device', label: 'Windows Deleted Device' },
+  { value: 'MVD', label: 'MVD' }
+];
+
+const BUILTIN_CONCERN_OVERRIDES_KEY = 'builtinConcernOverrides';
+
+function getBuiltinConcernOverrides() {
+  try {
+    const raw = localStorage.getItem(BUILTIN_CONCERN_OVERRIDES_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (err) {
+    console.error('Failed to read built-in concern overrides:', err);
+    return {};
+  }
+}
+
+function saveBuiltinConcernOverrides(overrides) {
+  try {
+    localStorage.setItem(BUILTIN_CONCERN_OVERRIDES_KEY, JSON.stringify(overrides));
+    return true;
+  } catch (err) {
+    console.error('Failed to save built-in concern overrides:', err);
+    alert('Could not save this change. Your browser storage may be full or disabled.');
+    return false;
+  }
+}
+
+function getEffectiveBuiltinLabel(value) {
+  const overrides = getBuiltinConcernOverrides();
+  if (overrides[value] && overrides[value].label) return overrides[value].label;
+  const def = BUILTIN_CONCERN_DEFS.find((d) => d.value === value);
+  return def ? def.label : value;
+}
+
+function getEffectiveBuiltinParts(value) {
+  const overrides = getBuiltinConcernOverrides();
+  if (overrides[value]) return makeConcernParts(overrides[value]);
+  return getBuiltinDefaultParts(value);
+}
+
+/**
+ * Updates the visible text of built-in <option> elements to reflect any
+ * saved label overrides, in every concernType select on the page (or a scope).
+ */
+function syncBuiltinConcernLabels(scope) {
+  const selects = scope
+    ? [scope]
+    : Array.from(document.querySelectorAll('select.concernType'));
+  selects.forEach((select) => {
+    const group = select.querySelector('.builtinConcernGroup');
+    if (!group) return;
+    Array.from(group.querySelectorAll('option')).forEach((opt) => {
+      opt.textContent = getEffectiveBuiltinLabel(opt.value);
+    });
+  });
+}
+
+function renderBuiltinConcernList() {
+  const container = document.getElementById('builtinConcernList');
+  if (!container) return;
+  const overrides = getBuiltinConcernOverrides();
+  container.innerHTML = '';
+
+  BUILTIN_CONCERN_DEFS.forEach((def) => {
+    const isOverridden = !!overrides[def.value];
+    const row = document.createElement('div');
+    row.className = 'customConcernItem';
+    row.innerHTML = `
+      <span class="customConcernName"></span>
+      <span class="customConcernActions">
+        ${isOverridden ? `<span class="muted" style="font-size:12px;">Customized</span>` : ''}
+        <button type="button" class="secondary" data-bt-action="edit" data-value="${def.value}">Edit</button>
+        ${isOverridden ? `<button type="button" class="danger" data-bt-action="reset" data-value="${def.value}">Reset to Default</button>` : ''}
+      </span>
+    `;
+    row.querySelector('.customConcernName').textContent = getEffectiveBuiltinLabel(def.value);
+    container.appendChild(row);
+  });
+}
+
+function loadBuiltinConcernTypeIntoForm(value) {
+  const parts = getEffectiveBuiltinParts(value);
+  document.getElementById('ctEditingValue').value = value;
+  document.getElementById('ctEditingType').value = 'builtin';
+  document.getElementById('ctLabel').value = getEffectiveBuiltinLabel(value);
+  document.getElementById('ctUserCalling').value = parts.userCalling;
+  document.getElementById('ctRootCause').value = parts.rootCause;
+  document.getElementById('ctTroubleshooting').value = parts.troubleshooting;
+  document.getElementById('ctKb').value = parts.kb;
+  document.getElementById('concernFormTitle').textContent = 'Edit Built-in Concern Type';
+  document.getElementById('btnSaveConcernType').textContent = 'Save Changes';
+  document.getElementById('btnCancelEditConcernType').style.display = 'inline-block';
+}
+
+function resetBuiltinConcernType(value) {
+  if (!confirm('Reset this concern type back to its original default text?')) return;
+  const overrides = getBuiltinConcernOverrides();
+  delete overrides[value];
+  if (!saveBuiltinConcernOverrides(overrides)) return;
+  syncBuiltinConcernLabels();
+  renderBuiltinConcernList();
 }
 
 function getIOSPasskeyParts() {
@@ -743,10 +882,7 @@ function getvalidphonesParts() {
   });
 }    
 
-function getConcernPartsByType(type) {
-  const custom = getCustomConcernPartsByType(type);
-  if (custom) return custom;
-
+function getBuiltinDefaultParts(type) {
   if (type === 'ios_passkey') return getIOSPasskeyParts();
   if (type === 'valid_phones') return getvalidphonesParts();
   if (type === 'bitlock') return getbitlockParts();
@@ -762,6 +898,24 @@ function getConcernPartsByType(type) {
   if (type === 'windows_Activation') return getWindows_ActivationParts();
   if (type === 'AzureVPN_taskbar') return getAzureVPN_taskbarParts();
   if (type === 'Deleted_device') return getDeletedDeviceParts();
+
+  return makeConcernParts({
+    userCalling: '',
+    rootCause: '',
+    troubleshooting: '',
+    kb: ''
+  });
+}
+
+function getConcernPartsByType(type) {
+  const custom = getCustomConcernPartsByType(type);
+  if (custom) return custom;
+
+  if (BUILTIN_CONCERN_DEFS.some((d) => d.value === type)) {
+    const overrides = getBuiltinConcernOverrides();
+    if (overrides[type]) return makeConcernParts(overrides[type]);
+    return getBuiltinDefaultParts(type);
+  }
 
   return makeConcernParts({
     userCalling: 'Select a concern type.',
@@ -832,6 +986,7 @@ function addEntry() {
 
   // Populate any saved custom concern types into this entry's dropdown
   populateCustomConcernOptions(node.querySelector('select.concernType'));
+  syncBuiltinConcernLabels(node.querySelector('select.concernType'));
 
   // Initialize empty outputs
   fillConcernOutputs(node, makeConcernParts({}));
@@ -1186,5 +1341,17 @@ if (btnImportConcernTypes && ctImportFileInput) {
 
 // Load any previously saved custom concern types into the dropdowns
 populateCustomConcernOptions();
+syncBuiltinConcernLabels();
+
+const builtinConcernListEl = document.getElementById('builtinConcernList');
+if (builtinConcernListEl) {
+  builtinConcernListEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-bt-action]');
+    if (!btn) return;
+    const value = btn.dataset.value;
+    if (btn.dataset.btAction === 'edit') loadBuiltinConcernTypeIntoForm(value);
+    if (btn.dataset.btAction === 'reset') resetBuiltinConcernType(value);
+  });
+}
 
 addEntry();
