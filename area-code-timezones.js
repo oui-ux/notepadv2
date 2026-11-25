@@ -1,0 +1,21 @@
+const AREA_CODE_TIMEZONES = {
+  "201":"Eastern Time (ET)", "202":"Eastern Time (ET)", "203":"Eastern Time (ET)",
+  "206":"Pacific Time (PT)", "207":"Eastern Time (ET)", "208":"Mountain Time (MT)",
+  "209":"Pacific Time (PT)", "210":"Central Time (CT)", "212":"Eastern Time (ET)",
+  "213":"Pacific Time (PT)", "214":"Central Time (CT)", "215":"Eastern Time (ET)",
+  "216":"Eastern Time (ET)", "217":"Central Time (CT)", "218":"Central Time (CT)",
+  "219":"Central Time (CT)", "303":"Mountain Time (MT)", "310":"Pacific Time (PT)",
+  "312":"Central Time (CT)", "314":"Central Time (CT)", "323":"Pacific Time (PT)",
+  "347":"Eastern Time (ET)", "385":"Mountain Time (MT)", "408":"Pacific Time (PT)",
+  "410":"Eastern Time (ET)", "415":"Pacific Time (PT)", "416":"Eastern Time (ET)",
+  "425":"Pacific Time (PT)", "437":"Eastern Time (ET)", "469":"Central Time (CT)",
+  "480":"Mountain Time (MT)", "503":"Pacific Time (PT)", "505":"Mountain Time (MT)",
+  "509":"Pacific Time (PT)", "512":"Central Time (CT)", "518":"Eastern Time (ET)",
+  "561":"Eastern Time (ET)", "602":"Mountain Time (MT)", "617":"Eastern Time (ET)",
+  "619":"Pacific Time (PT)", "646":"Eastern Time (ET)", "650":"Pacific Time (PT)",
+  "702":"Pacific Time (PT)", "703":"Eastern Time (ET)", "713":"Central Time (CT)",
+  "714":"Pacific Time (PT)", "718":"Eastern Time (ET)", "760":"Pacific Time (PT)",
+  "801":"Mountain Time (MT)", "817":"Central Time (CT)", "847":"Central Time (CT)",
+  "857":"Eastern Time (ET)", "909":"Pacific Time (PT)", "916":"Pacific Time (PT)",
+  "925":"Pacific Time (PT)", "972":"Central Time (CT)"
+};

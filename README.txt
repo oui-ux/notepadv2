@@ -1,0 +1,1 @@
+Keep index.html, styles.css, script.js, and area-code-timezones.js in the same folder. Open index.html. Type a supported phone number in Phone #, Best Contact Number, or Alternate Contact Number. Press Ctrl+F5 after replacing older files.

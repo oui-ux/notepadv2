@@ -112,15 +112,15 @@
             <h2>User Information</h2>
 
             <label>Root Cause</label>
-            <input class="rootCauseInfo" />
+            <input class="rootCauseInfo" value="user is not aware of any self-service options hence why user called GHD" />
             <label>Time Zone</label>
             <input class="timezone" />
             <label>Business Hours</label>
-            <input class="businessHours" />
+            <input class="businessHours" value="9am-5pm" />
             <label>Best Contact Number</label>
             <input class="bestContactNumber" />
             <label>Alternate Contact Number</label>
-            <input class="alternateContactNumber" />
+            <input class="alternateContactNumber" value="n/a" />
 
             <div class="btnRow">
               <button data-action="display">Display User Info</button>
@@ -151,7 +151,7 @@
 
               <div class="troubleshootingContent">
                 <div class="btnRow">
-                  <button class="secondary" data-action="copy-troubleshooting">Copy</button>
+                  <button class="secondary" data-action="copy-freetext">Copy</button>
                 </div>
                 <textarea class="issueText" style="width:100%;min-height:300px;resize:vertical;" placeholder="Troubleshooting Steps:">
 Troubleshooting Steps:
@@ -286,6 +286,7 @@ Permission to Close Ticket: Yes</textarea>
       </article>
     </template>
 
+    <script src="area-code-timezones.js"></script>
     <script src="script.js"></script>
   </body>
 </html>

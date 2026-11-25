@@ -16,6 +16,14 @@ function makeConcernParts({ userCalling = '', rootCause = '', troubleshooting = 
 function joinLines(lines) {
   return (lines || []).join('\n');
 }
+function getTimezoneFromPhone(phone) {
+  if (!phone) return '';
+  const digits = String(phone).replace(/\D/g, '');
+  let areaCode = '';
+  if (digits.length >= 11 && digits.startsWith('1')) areaCode = digits.slice(1, 4);
+  else if (digits.length >= 10) areaCode = digits.slice(0, 3);
+  return AREA_CODE_TIMEZONES[areaCode] || '';
+}
 
 /* ============================================================
    Custom Concern Types (saved permanently in this browser)
@@ -308,7 +316,6 @@ const BUILTIN_CONCERN_DEFS = [
   { value: 'iOS_new', label: 'iOS new' },
   { value: 'android_new', label: 'Android new' },
   { value: 'windows_deviceCompliance_update', label: 'Windows device compliance(updates)' },
-  { value: 'bitlock', label: 'Bitlock' },
   { value: 'windows_deviceCompliance_sync', label: 'Windows device compliance(sync)' },
   { value: 'identity_pass', label: 'Identity pass' },
   { value: 'RAS_access', label: 'RAS access' },
@@ -832,60 +839,11 @@ function getDisabledDeviceParts() {
   });
 }
 
-function getbitlockParts() {
-  return makeConcernParts({
-    userCalling:
-      ' user called because user cannot access windows device, it is on bitlock, impacting the capability of user to do work',
-    rootCause:
-      'Root cause:  user called GHD because bitlocker key for device was not available on self-service portal, hence why user called GHD',
-    troubleshooting: joinLines([
-      'Troubleshooting Steps:',
-      '',
-      '>user is in bitlock',
-'>user was not able to get recovery key on self-service portal',
-'>device is not listed',
-'>authenticated',
-'>user sent the recovery on teams',
-'>waiting for the bitlock key request',
-'>will ping user once key is available',
- 
-      
-    ]),
-    kb:
-      
-'KB0065685 : BitLocker: Retrieve Your BitLocker Key'
-  });
-}
 
-function getvalidphonesParts() {
-  return makeConcernParts({
-    userCalling:
-      ' user called because user cannot access resources on android device, impacting the capability of user to access resources on phone',
-    rootCause:
-      'Root cause:  user called GHD because user was not aware of any self-service links to follow, hence why user called GHD',
-    troubleshooting: joinLines([
-      'Troubleshooting Steps:',
-      '',
-      '>user is in bitlock',
-'>user was not able to get recovery key on self-service portal',
-'>device is not listed',
-'>authenticated',
-'>user sent the recovery on teams',
-'>waiting for the bitlock key request',
-'>will ping user once key is available',
- 
-      
-    ]),
-    kb:
-      
-'KB0065685 : BitLocker: Retrieve Your BitLocker Key'
-  });
-}    
 
 function getBuiltinDefaultParts(type) {
   if (type === 'ios_passkey') return getIOSPasskeyParts();
   if (type === 'valid_phones') return getvalidphonesParts();
-  if (type === 'bitlock') return getbitlockParts();
   if (type === 'android_passkey') return getAndroidPasskeyParts();
   if (type === 'iOS_new') return getiOS_newParts();
   if (type === 'windows_passkey') return getWindows_passkeyParts();
@@ -1353,5 +1311,19 @@ if (builtinConcernListEl) {
     if (btn.dataset.btAction === 'reset') resetBuiltinConcernType(value);
   });
 }
+entriesEl.addEventListener('input', (e) => {
+  const isPhoneField = e.target.classList.contains('headerText1') ||
+    e.target.classList.contains('bestContactNumber') ||
+    e.target.classList.contains('alternateContactNumber');
+  if (!isPhoneField) return;
+  const entry = e.target.closest('.entry');
+  if (!entry) return;
+  const timezoneField = entry.querySelector('.timezone');
+  if (timezoneField) timezoneField.value = getTimezoneFromPhone(e.target.value);
+  const headerPhone = entry.querySelector('.headerText1');
+  const bestPhone = entry.querySelector('.bestContactNumber');
+  if (e.target.classList.contains('headerText1') && bestPhone) bestPhone.value = e.target.value;
+  if (e.target.classList.contains('bestContactNumber') && headerPhone) headerPhone.value = e.target.value;
+});
 
 addEntry();
